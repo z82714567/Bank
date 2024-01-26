@@ -21,8 +21,15 @@ public class Account {
 	private Timestamp createdAt;
 	
 	//출금기능
+	public void withdraw(Long amount) {
+		//방어적 코드 작성 - (balance보다 큰 금액으로 출금 불가하게)
+		this.balance -= amount;
+	}
 	
 	//입금기능
+	public void deposit(Long amount) {
+		this.balance += amount;
+	}
 	
 	//패스워드 체크 기능
 	

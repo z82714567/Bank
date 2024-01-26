@@ -22,8 +22,8 @@ repositories {
 }
 
 dependencies {
-	implementation 'org.apache.tomcat.embed:tomcat-embed-jasper' //추가
-	implementation 'javax.servlet:jstl:1.2' //추가
+	implementation 'org.apache.tomcat.embed:tomcat-embed-jasper' //추가 
+	implementation 'javax.servlet:jstl:1.2' //추가 (에러나서 버전 적어줬음)
 	//implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.3.0' //추가
 
 	implementation 'org.springframework.boot:spring-boot-starter-web'
