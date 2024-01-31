@@ -27,13 +27,13 @@ public class Account {
 	private Integer userId;
 	private Timestamp createdAt;
 	
-	//출금기능
+	//출금 기능
 	public void withdraw(Long amount) {
 		//방어적 코드 작성 - (balance보다 큰 금액으로 출금 불가하게)
 		this.balance -= amount;
 	}
 	
-	//입금기능
+	//입금 기능
 	public void deposit(Long amount) {
 		this.balance += amount;
 	}

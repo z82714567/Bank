@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.tenco.bank.dto.AccountSaveFormDto;
 import com.tenco.bank.dto.DepositFormDto;
+import com.tenco.bank.dto.transferFormDto;
 import com.tenco.bank.dto.withdrawFormDto;
 import com.tenco.bank.handler.exception.CustomRestfulException;
 import com.tenco.bank.repository.entity.Account;
@@ -125,29 +126,23 @@ public class AccountService {
 	}
 
 	// 입금 기능 만들기
-	// 1. 계좌 존재여부 확인
-	// 2. 본인 계좌 여부 확인
-	// 3. 입금 처리
-	// 4. 거래 내역 등록
 	// 5. 트랜잭션 처리
 	@Transactional
 	public void updateAccountDeposit(DepositFormDto dto, Integer principalId) {
 		// 1. 계좌 존재 여부 확인
-
 		Account accountEntity = accountRepository.findByNumber(dto.getDAccountNumber());
 		if (accountEntity == null) {
 			throw new CustomRestfulException(Define.NOT_EXIST_ACCOUNT, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 
 		// 2. 본인 계좌 여부 확인
-
 		accountEntity.checkOwner(principalId);
 
-		// 3. 입금처리
+		// 3. 입금 처리
 		accountEntity.deposit(dto.getAmount());
 		accountRepository.updateById(accountEntity);
 
-		// 6. history에 거래내역 등록
+		// 4. history에 거래 내역 등록
 		History history = new History();
 		history.setAmount(dto.getAmount());
 		history.setWBalance(null); // 출금 계좌의 잔액을 가져와야하기 때문에
@@ -159,6 +154,21 @@ public class AccountService {
 		if (rowResultCount != 1) {
 			throw new CustomRestfulException("정상 처리 되지 않았습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
+	}
+
+	// 이체 기능 만들기
+	// 1. 출금 계좌 존재 여부 확인 -- select
+	// 2. 입금 계좌 존재 여부 확인 -- select
+	// 3. 출금 계좌 본인 소유 확인
+	// 4. 출금 계좌 비번 확인 -- object
+	// 5. 출금 계좌 잔액 확인 -- object
+	// 6. 출금 계좌 잔액 수정 -- update
+	// 7. 입금 계좌 잔액 수정 -- update
+	// 8. 거래 내역 등록 처리(이체 내역 쿼리) -- insert
+	// 9. 트랜잭션 처리
+	@Transactional
+	public void updateAccountTransfer(transferFormDto dto, Integer principalId) {
+		// 1. 출금 계좌 존재 여부 확인 -- select 
 	}
 
 }
