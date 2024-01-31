@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.tenco.bank.dto.AccountSaveFormDto;
+import com.tenco.bank.dto.DepositFormDto;
 import com.tenco.bank.dto.withdrawFormDto;
 import com.tenco.bank.handler.exception.CustomRestfulException;
 import com.tenco.bank.repository.entity.Account;
@@ -26,7 +27,7 @@ public class AccountService {
 	// 출금 처리 기능에서 필요
 	@Autowired
 	private HistoryRepository historyRepository;
-	
+
 	// 계좌 생성
 	// 사용자 정보 필요
 
@@ -36,16 +37,15 @@ public class AccountService {
 		System.out.println("createAccount AccountSaveFormDto.toString :  " + dto.toString());
 		System.out.println("createAccount dto.getNumber : " + dto.getNumber());
 
+		// 계좌번호 중복 확인
+		if (readAccount(dto.getNumber()) != null) {
+			System.out.println("createAccount not null 실행");
+			throw new CustomRestfulException(Define.EXIST_ACCOUNT, HttpStatus.INTERNAL_SERVER_ERROR);
 
-		//계좌번호 중복 확인 
-		if(readAccount(dto.getNumber()) != null) {
-			System.out.println("createAccount not null 실행"); throw new
-			CustomRestfulException(Define.EXIST_ACCOUNT,
-					HttpStatus.INTERNAL_SERVER_ERROR);
-
-		}else { System.out.println("넘어오나?"); } System.out.println("이건 실행이 되나? " +
-				dto.toString());
-
+		} else {
+			System.out.println("넘어오나?");
+		}
+		System.out.println("이건 실행이 되나? " + dto.toString());
 
 		Account account = new Account();
 		account.setNumber(dto.getNumber());
@@ -74,53 +74,91 @@ public class AccountService {
 
 	}
 
-	//1월 31일
-	//출금 기능 만들기
-	//7. 트랜잭션 처리 필!
+	// 1월 31일
+	// 출금 기능 만들기
+	// 7. 트랜잭션 처리 필!
 	@Transactional
 	public void updateAccountWithdraw(withdrawFormDto dto, Integer principalId) {
-		//1. 계좌 존재 여부 확인 -- select
+		// 1. 계좌 존재 여부 확인 -- select
 		Account accountEntity = accountRepository.findByNumber(dto.getWAccountNumber());
-		if(accountEntity == null) {
+		if (accountEntity == null) {
 			throw new CustomRestfulException(Define.NOT_EXIST_ACCOUNT, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-		//2. 본인 계좌 여부 확인 -- select로 조회보다는 accountEntity(메모리에 저장된) 객체 상태로 principalId로 비교 확인이 낫다 
+		// 2. 본인 계좌 여부 확인 -- select로 조회보다는 accountEntity(메모리에 저장된) 객체 상태로 principalId로
+		// 비교 확인이 낫다
 		accountEntity.checkOwner(principalId);
 		/*
 		 * if(accountEntity.getUserId() != principalId) { throw new
 		 * CustomRestfulException("본인 소유의 계좌가 아닙니다.", HttpStatus.INTERNAL_SERVER_ERROR);
 		 * }
 		 */
-		//3. 입력된 계좌 비밀번호 확인 -- String(불변) 문자열 비교 equals
+		// 3. 입력된 계좌 비밀번호 확인 -- String(불변) 문자열 비교 equals
 		accountEntity.checkPassword(dto.getWAccountPassword());
 		/*
 		 * if(accountEntity.getPassword().equals(dto.getWAccountPassword()) == false) {
 		 * throw new CustomRestfulException("출금 계좌 비밀번호가 틀렸습니다.",
 		 * HttpStatus.INTERNAL_SERVER_ERROR); }
 		 */
-		//4. 잔액 여부 확인 
+		// 4. 잔액 여부 확인
 		accountEntity.checkBlance(dto.getAmount());
 		/*
 		 * if(accountEntity.getBalance() < dto.getAmount()) { throw new
 		 * CustomRestfulException("계좌 잔액이 부족합니다.", HttpStatus.INTERNAL_SERVER_ERROR); }
 		 */
-		//5. 출금 처리 기능 --> 객체 상태값 변경됨
+		// 5. 출금 처리 기능 --> 객체 상태값 변경됨
 		accountEntity.withdraw(dto.getAmount());
 		accountRepository.updateById(accountEntity);
-		
-		//6. 거래 내역 등록 -- insert(history_tb)
+
+		// 6. 거래 내역 등록 -- insert(history_tb)
 		History history = new History();
 		history.setAmount(dto.getAmount());
-		history.setWBalance(accountEntity.getBalance()); 
+		history.setWBalance(accountEntity.getBalance());
 		history.setDBalance(null);
 		history.setWAccountId(accountEntity.getId());
 		history.setDAccountId(null);
-		
+
 		int rowResultCount = historyRepository.insert(history);
-		if(rowResultCount != 1) {
+		if (rowResultCount != 1) {
 			throw new CustomRestfulException("정상처리 되지 않았습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-	
+
+	}
+
+	// 입금 기능 만들기
+	// 1. 계좌 존재여부 확인
+	// 2. 본인 계좌 여부 확인
+	// 3. 입금 처리
+	// 4. 거래 내역 등록
+	// 5. 트랜잭션 처리
+	@Transactional
+	public void updateAccountDeposit(DepositFormDto dto, Integer principalId) {
+		// 1. 계좌 존재 여부 확인
+
+		Account accountEntity = accountRepository.findByNumber(dto.getDAccountNumber());
+		if (accountEntity == null) {
+			throw new CustomRestfulException(Define.NOT_EXIST_ACCOUNT, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+
+		// 2. 본인 계좌 여부 확인
+
+		accountEntity.checkOwner(principalId);
+
+		// 3. 입금처리
+		accountEntity.deposit(dto.getAmount());
+		accountRepository.updateById(accountEntity);
+
+		// 6. history에 거래내역 등록
+		History history = new History();
+		history.setAmount(dto.getAmount());
+		history.setWBalance(null); // 출금 계좌의 잔액을 가져와야하기 때문에
+		history.setDBalance(accountEntity.getBalance());
+		history.setWAccountId(null);
+		history.setDAccountId(accountEntity.getId());
+
+		int rowResultCount = historyRepository.insert(history);
+		if (rowResultCount != 1) {
+			throw new CustomRestfulException("정상 처리 되지 않았습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 
 }
