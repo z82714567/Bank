@@ -39,23 +39,15 @@ public class AccountController {
 	@Autowired
 	private AccountService accountService;
 
-	// 생성자 의존 (DI)
-	// public AccountController(HttpSession session) {
-	// this.session = session;
-	// }
-
-	// 페이지 요청
-	// 예시 주소 http://loacalhost:80/account/save?number=100&user=100;
 	/*
-	 * 계좌 생성 페이지 요청
+	 * 계좌 생성 페이지 요청 http://loacalhost:80/account/save?number=100&user=100;
 	 * 
 	 * @return saveForm.jsp
 	 */
-
 	@GetMapping("/save")
 	public String savePage() {
 
-		// 인증 검사
+		// 1. 인증 검사
 		User principal = (User) session.getAttribute(Define.PRINCIPAL);
 		if (principal == null) {
 			throw new UnAuthorizedException("로그인 후 이용해 주세요.", HttpStatus.UNAUTHORIZED);
@@ -95,7 +87,7 @@ public class AccountController {
 		return "redirect:/account/list";
 	}
 
-	// 계좌 목록 보기 페이지 생성
+	// 계좌 목록 페이지 요청
 	// http://localhost:80/account/list or http://localhost:80/account
 	@GetMapping({ "/list", "/" })
 	public String listPage(Model model) {
@@ -106,7 +98,7 @@ public class AccountController {
 			throw new UnAuthorizedException("로그인 후 이용해 주세요.", HttpStatus.UNAUTHORIZED);
 		}
 
-		// 경우의 수 (유, 무)
+		// if 경우의 수 (유, 무)
 		List<Account> accountList = accountService.readAccountListByUserId(principal.getId());
 
 		if (accountList.isEmpty()) {
@@ -119,7 +111,6 @@ public class AccountController {
 		return "account/list";
 	}
 
-	// 1월 31일
 	// 출금 페이지 요청
 	@GetMapping("/withdraw")
 	public String withdrawPage() {
@@ -131,7 +122,7 @@ public class AccountController {
 		return "account/withdraw";
 	}
 
-	// 출금 요청 로직 만들기
+	// 출금 기능 로직 
 	@PostMapping("/withdraw")
 	public String withdrawProc(withdrawFormDto dto) {
 		// 1. 인증 검사
@@ -170,7 +161,7 @@ public class AccountController {
 		return "account/deposit";
 	}
 
-	// 입금 요청 로직
+	// 입금 기능 로직
 	@PostMapping("/deposit")
 	public String depositProc(DepositFormDto dto) {
 		// 1. 인증 검사
@@ -207,7 +198,7 @@ public class AccountController {
 		return "account/transfer";
 	}
 
-	// 이체 요청 로직
+	// 이체 기능 요청 로직
 	@PostMapping("/transfer")
 	public String transferProc(transferFormDto dto) {
 		// 1. 인증 검사
@@ -239,7 +230,7 @@ public class AccountController {
 		return "redirect:/account/list"; // 리다이렉트 : 새로운 리퀘스트,리스펀스객체 생성됨을 뜻함
 	}
 
-	// 계좌 상세보기 페이지 요청 (입출금, 입금, 출금페이지)
+	// 나의 계좌 목록 페이지 요청 (입출금, 입금, 출금페이지)
 	// http://localhost:80/account/detail/1?type=
 	@GetMapping("/detail/{id}")
 	public String detail(@PathVariable Integer id,

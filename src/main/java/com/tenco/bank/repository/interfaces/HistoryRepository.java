@@ -11,6 +11,7 @@ import com.tenco.bank.repository.entity.History;
 @Mapper
 public interface HistoryRepository {
 
+	// 출금,입금,이체 기능 거래 내역 저장
 	public int insert(History history);
 
 	public int updateById(History history);

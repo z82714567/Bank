@@ -32,51 +32,42 @@ public class AccountService {
 
 	// 계좌 생성
 	// 사용자 정보 필요
-
 	@Transactional
 	public void createAccount(AccountSaveFormDto dto, Integer principalId) {
-		System.out.println("createAccount principalId : " + principalId);
-		System.out.println("createAccount AccountSaveFormDto.toString :  " + dto.toString());
-		System.out.println("createAccount dto.getNumber : " + dto.getNumber());
 
-		// 계좌번호 중복 확인
+		// 3-1. 계좌번호 중복 확인
 		if (readAccount(dto.getNumber()) != null) {
 			System.out.println("createAccount not null 실행");
 			throw new CustomRestfulException(Define.EXIST_ACCOUNT, HttpStatus.INTERNAL_SERVER_ERROR);
-
-		} else {
-			System.out.println("넘어오나?");
 		}
-		System.out.println("이건 실행이 되나? " + dto.toString());
-
+		
+		// 1. 사용자 입력 정보 계좌 생성 
 		Account account = new Account();
 		account.setNumber(dto.getNumber());
 		account.setPassword(dto.getPassword());
 		account.setBalance(dto.getBalance());
 		account.setUserId(principalId);
-
-		System.out.println("dto To Entity account : " + account.toString());
-
+		
+		// 2. 입력된 계좌 insert
 		int resultRowCount = accountRepository.insert(account);
 		if (resultRowCount != 1) {
 			throw new CustomRestfulException(Define.FAIL_TO_CREATE_ACCOUNT, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
-	// 단일 계좌 검색 기능
+	// 3. 단일 계좌 검색 기능 -계좌번호 중복 확인을 위해서 
 	public Account readAccount(String number) {
 		System.out.println("number : " + number);
 		return accountRepository.findByNumber(number);
 
 	}
 
-	// 계좌 목록 보기 기능
+	// 계좌 목록 기능
 	public List<Account> readAccountListByUserId(Integer principalId) {
 		return accountRepository.findAllByUserId(principalId);
 
 	}
 
-	// 1월 31일
 	// 출금 기능 만들기
 	// 7. 트랜잭션 처리 필!
 	@Transactional
@@ -157,69 +148,69 @@ public class AccountService {
 		}
 	}
 
-	//	이체 기능만들기	
-	//	11.트랜잭션 처리
+	// 이체 기능만들기
+	// 11.트랜잭션 처리
 	@Transactional
 	public void updateAccountTransfer(transferFormDto dto, Integer principalId) {
 		Account withdrawAccountEntity = accountRepository.findByNumber(dto.getWAccountNumber());
 		Account depositAccountEntity = accountRepository.findByNumber(dto.getDAccountNumber());
 
-		//1. 출금 계좌 존재 여부
+		// 1. 출금 계좌 존재 여부
 		if (withdrawAccountEntity == null) {
 			throw new CustomRestfulException(Define.NOT_EXIST_ACCOUNT, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-		//	2. 입금 계좌 존재 확인
+		// 2. 입금 계좌 존재 확인
 		if (depositAccountEntity == null) {
 			throw new CustomRestfulException("상대방의 계좌 번호가 없습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-		//	3. 출금 계좌 본인 소유 확인
+		// 3. 출금 계좌 본인 소유 확인
 		withdrawAccountEntity.checkOwner(principalId);
-		//	4. 출금 계좌 비번 확인
+		// 4. 출금 계좌 비번 확인
 		withdrawAccountEntity.checkPassword(dto.getPassword());
-		//	5. 출금 계좌 잔액 확인
+		// 5. 출금 계좌 잔액 확인
 		withdrawAccountEntity.checkBalance(dto.getAmount());
-		//	6. 출금 계좌 잔액 객체 수정
+		// 6. 출금 계좌 잔액 객체 수정
 		withdrawAccountEntity.withdraw(dto.getAmount());
-		//	7. 입금 계좌 잔액 객체 수정
+		// 7. 입금 계좌 잔액 객체 수정
 		depositAccountEntity.deposit(dto.getAmount());
-		//	8. 출금 계좌 update
+		// 8. 출금 계좌 update
 		int resultRowCountWithdraw = accountRepository.updateById(withdrawAccountEntity);
-		//	9. 입금 계좌 update
+		// 9. 입금 계좌 update
 		int resultRowCountDeposit = accountRepository.updateById(depositAccountEntity);
-		
-		if(resultRowCountWithdraw != 1 && resultRowCountDeposit != 1) {
+
+		if (resultRowCountWithdraw != 1 && resultRowCountDeposit != 1) {
 			throw new CustomRestfulException("정상 처리 되지 않았습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-		
-		//	10. 거래 내역 등록 처리
+
+		// 10. 거래 내역 등록 처리
 		History history = History.builder().amount(dto.getAmount()) // 이체 금액
 				.wAccountId(withdrawAccountEntity.getId()) // 출금 계좌
 				.dAccountId(depositAccountEntity.getId()) // 입금 계좌
 				.wBalance(withdrawAccountEntity.getBalance()) // 출금 계좌 남은 잔액
 				.dBalance(depositAccountEntity.getBalance()) // 입금 계좌 남은 잔액
 				.build();
-		
+
 		int resultRowCountHistory = historyRepository.insert(history);
-		if(resultRowCountHistory != 1) {
+		if (resultRowCountHistory != 1) {
 			throw new CustomRestfulException("정상 처리 되지 않았습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
 	/**
-	 * 단일 계좌 거래 내역 검색(입출금, 입금, 출금)
+	 * 나의 계좌 목록 검색(입출금, 입금, 출금)
+	 * 
 	 * @param type = [all, deposit, withdraw]
-	 * @param id (account_id)
+	 * @param id   (account_id)
 	 * @return 동적쿼리 - List
 	 */
 	public List<CustomHistoryEntity> readHistoryListByAccount(String type, Integer id) {
 		return historyRepository.findByIdHistoryType(type, id);
-		
+
 	}
-	
-	//단일 계좌 조회 - AccountById
+
+	// 단일 계좌 조회 - AccountById
 	public Account readByAccountId(Integer id) {
 		return accountRepository.findByAccountId(id);
 	}
-	
 
 }
