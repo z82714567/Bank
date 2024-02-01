@@ -2,13 +2,16 @@ package com.tenco.bank.controller;
 
 import java.util.List;
 
+import org.eclipse.jdt.internal.compiler.ast.FalseLiteral;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.tenco.bank.dto.AccountSaveFormDto;
 import com.tenco.bank.dto.DepositFormDto;
@@ -17,11 +20,13 @@ import com.tenco.bank.dto.withdrawFormDto;
 import com.tenco.bank.handler.exception.CustomRestfulException;
 import com.tenco.bank.handler.exception.UnAuthorizedException;
 import com.tenco.bank.repository.entity.Account;
+import com.tenco.bank.repository.entity.CustomHistoryEntity;
 import com.tenco.bank.repository.entity.User;
 import com.tenco.bank.service.AccountService;
 import com.tenco.bank.utils.Define;
 
 import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequestMapping("/account") // 대문
@@ -201,37 +206,64 @@ public class AccountController {
 		}
 		return "account/transfer";
 	}
-	
+
 	// 이체 요청 로직
-		@PostMapping("/transfer")
-		public String transferProc(transferFormDto dto) {
-			// 1. 인증 검사
-			User principal = (User) session.getAttribute(Define.PRINCIPAL); // 다운 캐스팅
-			if (principal == null) {
-				throw new UnAuthorizedException(Define.ENTER_YOUR_LOGIN, HttpStatus.UNAUTHORIZED);
-			}
-
-			// 2. 유효성 검사
-			if (dto.getAmount() == null) {
-				throw new CustomRestfulException(Define.ENTER_YOUR_BALANCE, HttpStatus.BAD_REQUEST);
-			}
-			if (dto.getAmount().longValue() <= 0) {
-				throw new CustomRestfulException(Define.D_BALANCE_VALUE, HttpStatus.BAD_REQUEST);
-			}
-			if (dto.getWAccountNumber() == null || dto.getWAccountNumber().isEmpty()) {
-				throw new CustomRestfulException(Define.ENTER_YOUR_ACCOUNT_NUMBER, HttpStatus.BAD_REQUEST);
-			}
-			if (dto.getWAccountPassword() == null || dto.getWAccountPassword().isEmpty()) {
-				throw new CustomRestfulException(Define.ENTER_YOUR_ACCOUNT_NUMBER, HttpStatus.BAD_REQUEST);
-			}
-			if(dto.getDAccountNumber() == null || dto.getDAccountNumber().isEmpty()) {
-				throw new CustomRestfulException(Define.ENTER_YOUR_ACCOUNT_NUMBER, HttpStatus.BAD_REQUEST);
-			}
-			
-			// 서비스 호출
-			accountService.updateAccountTransfer(dto, principal.getId());
-
-			return "redirect:/account/list";
+	@PostMapping("/transfer")
+	public String transferProc(transferFormDto dto) {
+		// 1. 인증 검사
+		User principal = (User) session.getAttribute(Define.PRINCIPAL); // 다운 캐스팅
+		if (principal == null) {
+			throw new UnAuthorizedException(Define.ENTER_YOUR_LOGIN, HttpStatus.UNAUTHORIZED);
 		}
+
+		// 2. 유효성 검사
+		if (dto.getAmount() == null) {
+			throw new CustomRestfulException(Define.ENTER_YOUR_BALANCE, HttpStatus.BAD_REQUEST);
+		}
+		if (dto.getAmount().longValue() <= 0) {
+			throw new CustomRestfulException(Define.D_BALANCE_VALUE, HttpStatus.BAD_REQUEST);
+		}
+		if (dto.getWAccountNumber() == null || dto.getWAccountNumber().isEmpty()) {
+			throw new CustomRestfulException("출금 하실 계좌번호를 입력해주세요.", HttpStatus.BAD_REQUEST);
+		}
+		if (dto.getDAccountNumber() == null || dto.getDAccountNumber().isEmpty()) {
+			throw new CustomRestfulException("이체 하실 계좌번호를 입력해주세요.", HttpStatus.BAD_REQUEST);
+		}
+		if (dto.getPassword() == null || dto.getPassword().isEmpty()) {
+			throw new CustomRestfulException(Define.ENTER_YOUR_PASSWORD, HttpStatus.BAD_REQUEST);
+		}
+
+		// 서비스 호출
+		accountService.updateAccountTransfer(dto, principal.getId());
+
+		return "redirect:/account/list"; // 리다이렉트 : 새로운 리퀘스트,리스펀스객체 생성됨을 뜻함
+	}
+
+	// 계좌 상세보기 페이지 요청 (입출금, 입금, 출금페이지)
+	// http://localhost:80/account/detail/1?type=
+	@GetMapping("/detail/{id}")
+	public String detail(@PathVariable Integer id,
+			@RequestParam(name = "type", defaultValue = "all", required = false) String type, Model model) {
+		System.out.println("type : " + type);
+
+		// 1. 인증 검사
+		User principal = (User) session.getAttribute(Define.PRINCIPAL); // 다운 캐스팅
+		if (principal == null) {
+			throw new UnAuthorizedException(Define.ENTER_YOUR_LOGIN, HttpStatus.UNAUTHORIZED);
+		}
+
+		// 2. 서비스 호출
+		Account account = accountService.readByAccountId(id);
+
+		List<CustomHistoryEntity> historyList = accountService.readHistoryListByAccount(type, id);
+		System.out.println("list : " + historyList.toString());
+
+		model.addAttribute("account", account);
+		model.addAttribute("historyList", historyList);
+
+		// 3. 응답 결과 -> jsp파일로 내려주기
+
+		return "account/detail";
+	}
 
 }

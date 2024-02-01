@@ -46,7 +46,7 @@ public class Account {
 	}
 	
 	//잔액 여부 확인 기능
-	public void checkBlance(Long amount) {
+	public void checkBalance(Long amount) {
 		if(this.balance < amount) {
 			throw new CustomRestfulException("출금 잔액이 부족합니다.", HttpStatus.BAD_REQUEST);
 		}
