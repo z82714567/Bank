@@ -30,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequestMapping("/account") // 대문
+//인증검사 코드리팩토링(2/2)
 public class AccountController {
 
 	@Autowired // 가독성을 위해 DI 하는거 라고 알려줌
@@ -48,10 +49,7 @@ public class AccountController {
 	public String savePage() {
 
 		// 1. 인증 검사
-		User principal = (User) session.getAttribute(Define.PRINCIPAL);
-		if (principal == null) {
-			throw new UnAuthorizedException("로그인 후 이용해 주세요.", HttpStatus.UNAUTHORIZED);
-		}
+		//AuthInterceptor
 
 		return "account/saveForm";
 	}
@@ -64,9 +62,7 @@ public class AccountController {
 		// 1. 인증 검사
 		User principal = (User) session.getAttribute(Define.PRINCIPAL);
 
-		if (principal == null) {
-			throw new UnAuthorizedException("로그인 후 이용해 주세요.", HttpStatus.UNAUTHORIZED);
-		}
+		
 
 		// 2. 유효성 검사
 		if (dto.getNumber() == null || dto.getNumber().isEmpty()) {
@@ -94,9 +90,7 @@ public class AccountController {
 		// 필터(보통 시큐리티), 인터셉터(보통 인증 검사), AOP 로 처리 가능
 		// 1. 인증 검사
 		User principal = (User) session.getAttribute(Define.PRINCIPAL);
-		if (principal == null) {
-			throw new UnAuthorizedException("로그인 후 이용해 주세요.", HttpStatus.UNAUTHORIZED);
-		}
+		
 
 		// if 경우의 수 (유, 무)
 		List<Account> accountList = accountService.readAccountListByUserId(principal.getId());
@@ -115,10 +109,7 @@ public class AccountController {
 	@GetMapping("/withdraw")
 	public String withdrawPage() {
 		// 1. 인증 검사
-		User principal = (User) session.getAttribute(Define.PRINCIPAL);
-		if (principal == null) {
-			throw new UnAuthorizedException("로그인 후 이용해 주세요.", HttpStatus.UNAUTHORIZED);
-		}
+		//AuthInterceptor
 		return "account/withdraw";
 	}
 
@@ -127,9 +118,7 @@ public class AccountController {
 	public String withdrawProc(withdrawFormDto dto) {
 		// 1. 인증 검사
 		User principal = (User) session.getAttribute(Define.PRINCIPAL);
-		if (principal == null) {
-			throw new UnAuthorizedException("로그인 후 이용해 주세요.", HttpStatus.UNAUTHORIZED);
-		}
+		
 		// 2. 유효성 검사
 		if (dto.getAmount() == null) {
 			throw new CustomRestfulException("금액을 입력하시오.", HttpStatus.BAD_REQUEST);
@@ -153,10 +142,7 @@ public class AccountController {
 	@GetMapping("/deposit")
 	public String depositPage() {
 		// 1. 인증 검사
-		User principal = (User) session.getAttribute(Define.PRINCIPAL); // 다운 캐스팅
-		if (principal == null) {
-			throw new UnAuthorizedException(Define.ENTER_YOUR_LOGIN, HttpStatus.UNAUTHORIZED);
-		}
+		//AuthInterceptor
 
 		return "account/deposit";
 	}
@@ -166,9 +152,7 @@ public class AccountController {
 	public String depositProc(DepositFormDto dto) {
 		// 1. 인증 검사
 		User principal = (User) session.getAttribute(Define.PRINCIPAL); // 다운 캐스팅
-		if (principal == null) {
-			throw new UnAuthorizedException(Define.ENTER_YOUR_LOGIN, HttpStatus.UNAUTHORIZED);
-		}
+		
 
 		// 2. 유효성 검사
 		if (dto.getAmount() == null) {
@@ -191,10 +175,7 @@ public class AccountController {
 	@GetMapping("/transfer")
 	public String transferPage() {
 		// 1. 인증 검사
-		User principal = (User) session.getAttribute(Define.PRINCIPAL); // 다운 캐스팅
-		if (principal == null) {
-			throw new UnAuthorizedException(Define.ENTER_YOUR_LOGIN, HttpStatus.UNAUTHORIZED);
-		}
+		//AuthInterceptor
 		return "account/transfer";
 	}
 
@@ -203,9 +184,7 @@ public class AccountController {
 	public String transferProc(transferFormDto dto) {
 		// 1. 인증 검사
 		User principal = (User) session.getAttribute(Define.PRINCIPAL); // 다운 캐스팅
-		if (principal == null) {
-			throw new UnAuthorizedException(Define.ENTER_YOUR_LOGIN, HttpStatus.UNAUTHORIZED);
-		}
+		
 
 		// 2. 유효성 검사
 		if (dto.getAmount() == null) {
@@ -238,10 +217,7 @@ public class AccountController {
 		System.out.println("type : " + type);
 
 		// 1. 인증 검사
-		User principal = (User) session.getAttribute(Define.PRINCIPAL); // 다운 캐스팅
-		if (principal == null) {
-			throw new UnAuthorizedException(Define.ENTER_YOUR_LOGIN, HttpStatus.UNAUTHORIZED);
-		}
+		//AuthInterceptor
 
 		// 2. 서비스 호출
 		Account account = accountService.readByAccountId(id);
