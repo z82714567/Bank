@@ -203,12 +203,12 @@ public class AccountService {
 	 * @param id   (account_id)
 	 * @return 동적쿼리 - List
 	 */
+	// 나의 계좌 목록 조회
 	public List<CustomHistoryEntity> readHistoryListByAccount(String type, Integer id) {
 		return historyRepository.findByIdHistoryType(type, id);
-
 	}
 
-	// 단일 계좌 조회 - AccountById
+	// 나의 계좌 조회 - AccountById
 	public Account readByAccountId(Integer id) {
 		return accountRepository.findByAccountId(id);
 	}

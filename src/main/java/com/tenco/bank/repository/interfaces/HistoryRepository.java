@@ -23,7 +23,7 @@ public interface HistoryRepository {
 
 	public List<History> findAll();
 
-	// 나의 계좌 목록 조회
+	// 나의 계좌 목록 조회(입출금,입금,출금)
 	// 파라미터 갯수가 2개 이상이면 반드시! 파람 어노테이션 사용
 	public List<CustomHistoryEntity> findByIdHistoryType(@Param("type") String type, @Param("id") Integer id);
 

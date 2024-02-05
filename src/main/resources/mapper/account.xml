@@ -38,7 +38,7 @@
 		select * from account_tb where number = #{number}
 	</select>
 
-	<!-- 나의 계좌 목록 조회 -->
+	<!-- 나의 계좌 조회 -->
 	<select id="findByAccountId"
 		resultType="com.tenco.bank.repository.entity.Account">
 		select * from account_tb where id = #{id}

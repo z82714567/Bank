@@ -53,7 +53,7 @@
 		<if test="type == 'withdraw'"> <!-- 문자열 비교 홑따옴표 -->
 			select h.id, h.amount, h.w_balance as balance,
 			wa.number as sender, h.created_at,
-			ifnull(h.d_account_id, 'ATM') as receiver,
+			ifnull(h.d_account_id, 'ATM') as receiver, <!-- receiver 컬럼은 거래의 수신자 계좌 ID(h.d_account_id)를 나타내는데, 값이 NULL인 경우 'ATM'으로 표시 -->
 			da.number
 			from history_tb as h
 			left join account_tb as wa

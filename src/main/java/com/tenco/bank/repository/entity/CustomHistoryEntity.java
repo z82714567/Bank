@@ -23,6 +23,7 @@ public class CustomHistoryEntity {
 	private String receiver;
 	private Timestamp createdAt;
 	
+	//"yyyy-MM-dd HH:mm:ss"
 	public String formatCreatedAt() {
 		return TimeUtils.timestampToString(createdAt);
 	} 

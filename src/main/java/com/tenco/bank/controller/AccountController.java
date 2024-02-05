@@ -63,7 +63,6 @@ public class AccountController {
 		User principal = (User) session.getAttribute(Define.PRINCIPAL);
 
 		
-
 		// 2. 유효성 검사
 		if (dto.getNumber() == null || dto.getNumber().isEmpty()) {
 			throw new CustomRestfulException("계좌번호를 입력하세요.", HttpStatus.UNAUTHORIZED);
@@ -91,7 +90,6 @@ public class AccountController {
 		// 1. 인증 검사
 		User principal = (User) session.getAttribute(Define.PRINCIPAL);
 		
-
 		// if 경우의 수 (유, 무)
 		List<Account> accountList = accountService.readAccountListByUserId(principal.getId());
 
@@ -153,7 +151,6 @@ public class AccountController {
 		// 1. 인증 검사
 		User principal = (User) session.getAttribute(Define.PRINCIPAL); // 다운 캐스팅
 		
-
 		// 2. 유효성 검사
 		if (dto.getAmount() == null) {
 			throw new CustomRestfulException(Define.ENTER_YOUR_BALANCE, HttpStatus.BAD_REQUEST);
@@ -213,20 +210,21 @@ public class AccountController {
 	// http://localhost:80/account/detail/1?type=
 	@GetMapping("/detail/{id}")
 	public String detail(@PathVariable Integer id,
-			@RequestParam(name = "type", defaultValue = "all", required = false) String type, Model model) {
+			@RequestParam(name = "type", defaultValue = "all", required = false) String type, Model model) { //해당 필드가 쿼리스트링에 존재하지 않아도 예외가 발생x
 		System.out.println("type : " + type);
 
 		// 1. 인증 검사
 		//AuthInterceptor
 
-		// 2. 서비스 호출
+		// 2-2. 서비스 호출(나의 계좌 조회 기능)
 		Account account = accountService.readByAccountId(id);
 
+		// 2-1. 서비스 호출 (나의 계좌 목록 조회)
 		List<CustomHistoryEntity> historyList = accountService.readHistoryListByAccount(type, id);
 		System.out.println("list : " + historyList.toString());
 
-		model.addAttribute("account", account);
-		model.addAttribute("historyList", historyList);
+		model.addAttribute("account", account); // 계좌 model 객체 담기
+		model.addAttribute("historyList", historyList); // 내역 model 객체 담기
 
 		// 3. 응답 결과 -> jsp파일로 내려주기
 

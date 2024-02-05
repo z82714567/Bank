@@ -19,6 +19,6 @@ public interface UserRepository {
 	public List<User> findAll();
 	
 	// 사용자 username으로 존재 여부 확인
-	public User findByUsername(String username);
+	public User findByUsername(String username); // UserService의 User userEntity = userRepository.findByUsername(dto.getUsername()); dto의 getUsername 의 타입으로 파라미터 변경해줌
 	public User findByUsernameAndPassword(User user); //(파라미터 부분)
 }
