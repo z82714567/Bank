@@ -1,0 +1,19 @@
+
+package com.tenco.bank.dto;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+
+import lombok.Data;
+
+@Data
+public class Profile {
+
+	private String nickname;
+	private String thumbnailImageUrl;
+	private String profileImageUrl;
+	private Boolean isDefaultImage;
+
+
+}

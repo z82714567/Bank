@@ -97,4 +97,9 @@ public class UserService {
 		return userEntity;
 	}
 
+	// 사용자 이름만 가지고 정보 조회(소셜 로그인)
+	public User readUserByUserName(String username) {
+		return userRepository.findByUsername(username);
+		
+	}
 }

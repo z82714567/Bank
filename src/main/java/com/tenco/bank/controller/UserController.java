@@ -2,16 +2,28 @@ package com.tenco.bank.controller;
 
 import java.io.File;
 import java.io.IOException;
+
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.tenco.bank.dto.KakaoProfile;
+import com.tenco.bank.dto.OAuthToken;
 import com.tenco.bank.dto.SignInFormDto;
 import com.tenco.bank.dto.SignUpFormDto;
 import com.tenco.bank.handler.exception.CustomRestfulException;
@@ -163,12 +175,94 @@ public class UserController {
 		return "redirect:/account/list";
 	}
 
+	// 로그아웃 기능
 	@GetMapping("/sign-out")
 	public String signOutProc() {
 
 		httpSession.invalidate();
 
 		return "redirect:/user/sign-in";
+	}
+	
+	// 소셜 로그인
+	// http://localhost:80/user/kakao-callback?code=""
+	@GetMapping("/kakao-callback")
+	// @ResponseBody // 데이터를 반환해줌 (로그인 처리 후 지워줌 - 데이터 잘 넘어 오는지 확인용)
+	public String kakaoCallback(@RequestParam String code) {
+		System.out.println("code : " + code);
+		
+		// POST방식, 헤더/바디 구성
+		RestTemplate rt1 = new RestTemplate();
+		
+		// 헤더 구성
+		HttpHeaders headers1 = new HttpHeaders();
+		headers1.add("Content-type", "application/x-www-form-urlencoded;charset=utf-8");
+		
+		// 바디 구성
+		MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+		params.add("grant_type", "authorization_code");
+		params.add("client_id", "e8462fc1117472d26560e8166e67e3e9");
+		params.add("redirect_uri", "http://localhost/user/kakao-callback");
+		params.add("code", code);
+		
+		// 헤더+바디 결합 --> 요청 http 메세지 만들어 짐
+		HttpEntity<MultiValueMap<String, String>> reqMsg
+			= new HttpEntity<>(params, headers1);
+		ResponseEntity<OAuthToken> response 
+			= rt1.exchange("https://kauth.kakao.com/oauth/token", HttpMethod.POST, reqMsg, OAuthToken.class);
+		
+		
+		// 사용자 정보 가져오기 : 다시 요청하기 -- 인증 토큰을 가지고 사용자 정보 요청함 -- Rt 만들어서 요청
+		RestTemplate rt2 = new RestTemplate();
+		
+		// 헤더 구성
+		HttpHeaders headers2 = new HttpHeaders();
+		headers2.add("Authorization", "Bearer " + response.getBody().getAccessToken());
+		headers2.add("Content-type", "application/x-www-form-urlencoded;charset=utf-8");
+		
+		// 바디 구성 x (쿼리 파라미터 필수 아니라서 제외)
+		
+		// 결합 --> 요청
+		HttpEntity<MultiValueMap<String, String>> kakaoInfo
+			= new HttpEntity<>(headers2);
+		
+		ResponseEntity<KakaoProfile> response2 
+			= rt2.exchange("https://kapi.kakao.com/v2/user/me", HttpMethod.POST, kakaoInfo, KakaoProfile.class);
+		
+		System.out.println(response2.getBody());
+		
+		
+		KakaoProfile kakoProfile = response2.getBody();
+		
+		// 최초 사용자 판단 여부 --> 사용자 username 존재여부 확인
+		// 우리 사이트를 통해 로그인 한 사용자와 카카오로 로그인 한 사용자가 동일한 경우 
+		SignUpFormDto dto = SignUpFormDto.builder()
+								.username("OAuth_" + kakoProfile.getProperties().getNickname())
+								.fullname("Kakao")
+								.password("asd1234")
+								.build();
+		User oldUser = userService.readUserByUserName(dto.getUsername());
+		if(oldUser == null) {
+			// 최초 회원가입 처리
+			userService.createUser(dto);
+			
+			// 
+			oldUser = new User();  
+			oldUser.setUsername(dto.getUsername());
+			oldUser.setFullname(dto.getFullname());
+		}
+		
+		oldUser.setPassword(null);
+		// 존재하면 로그인 처리
+		httpSession.setAttribute(Define.PRINCIPAL, oldUser);
+		
+		
+		// 없다면 회원 후 로그인 처리
+		
+		
+		
+		
+		return "redirect:/account/list";
 	}
 
 }

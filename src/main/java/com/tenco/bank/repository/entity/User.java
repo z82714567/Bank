@@ -11,6 +11,8 @@ import lombok.Setter;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class User {
 
 	private Integer id;
